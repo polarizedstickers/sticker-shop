@@ -176,21 +176,30 @@ def create_order():
     data = request.get_json()
     db = get_db()
     oid = 'PST-' + str(int(datetime.now().timestamp() * 1000))[-6:]
-    db.execute(
-        """INSERT INTO orders (id, customer_id, customer_name, email, phone, address, city, pin, state, payment_method, status, total)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (oid, data.get('customerId'), data['name'], data.get('email', ''), data.get('phone', ''),
-         data.get('address', ''), data.get('city', ''), data.get('pin', ''),
-         data.get('state', ''), data.get('paymentMethod', 'card'), 'confirmed', int(data['total']))
-    )
-    for item in data.get('items', []):
+    cust_id = data.get('customerId')
+    if cust_id:
+        exists = db.execute("SELECT id FROM customers WHERE id=?", (cust_id,)).fetchone()
+        if not exists:
+            cust_id = None
+    try:
         db.execute(
-            "INSERT INTO order_items (order_id, product_id, product_name, product_image, size, quantity, price) VALUES (?,?,?,?,?,?,?)",
-            (oid, item.get('productId'), item['name'], item.get('image', ''),
-             item.get('size', ''), int(item.get('qty', 1)), int(item['price']))
+            """INSERT INTO orders (id, customer_id, customer_name, email, phone, address, city, pin, state, payment_method, status, total)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (oid, cust_id, data['name'], data.get('email', ''), data.get('phone', ''),
+             data.get('address', ''), data.get('city', ''), data.get('pin', ''),
+             data.get('state', ''), data.get('paymentMethod', 'card'), 'confirmed', int(data['total']))
         )
-    db.commit()
-    return jsonify({'id': oid, 'ok': True}), 201
+        for item in data.get('items', []):
+            db.execute(
+                "INSERT INTO order_items (order_id, product_id, product_name, product_image, size, quantity, price) VALUES (?,?,?,?,?,?,?)",
+                (oid, item.get('productId'), item['name'], item.get('image', ''),
+                 item.get('size', ''), int(item.get('qty', 1)), int(item['price']))
+            )
+        db.commit()
+        return jsonify({'id': oid, 'ok': True}), 201
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/orders/<order_id>', methods=['PATCH'])
 @require_admin
