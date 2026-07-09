@@ -285,12 +285,8 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
       <div class="pys" id="ps2">
         <h4 style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.25rem">Payment</h4>
         <p style="color:var(--muted);font-size:.85rem;margin-bottom:1.25rem">All transactions are secure.</p>
-        <div class="pm"><button class="pmb a" onclick="selPM('card',this)"><i class="fas fa-credit-card"></i><span>Card</span></button><button class="pmb" onclick="selPM('cod',this)"><i class="fas fa-money-bill"></i><span>COD</span></button><button class="pmb" onclick="selPM('upi',this)"><i class="fas fa-qrcode"></i><span>UPI</span></button></div>
-        <div id="pyC"><div class="fg"><label class="fl">Card Number</label><input type="text" class="fi" id="cN" placeholder="1234 5678 9012 3456" maxlength="19"></div>
-        <div class="cig"><div class="fg"><label class="fl">Expiry</label><input type="text" class="fi" id="cE" placeholder="MM/YY" maxlength="5"></div>
-        <div class="fg"><label class="fl">CVV</label><input type="text" class="fi" id="cV" placeholder="***" maxlength="3"></div></div></div>
-        <div id="pyU" style="display:none"><div class="fg"><label class="fl">UPI ID</label><input type="text" class="fi" id="uI" placeholder="name@upi"></div></div>
-        <div id="pyD" style="display:none"><p style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Pay on delivery</p></div>
+        <div class="pm"><button class="pmb a" onclick="selPM('paytm',this)"><img src="https://img.icons8.com/color/48/paytm.png" style="width:28px;height:28px" alt="Paytm"><span>Paytm</span></button><button class="pmb" onclick="selPM('gpay',this)"><img src="https://img.icons8.com/color/48/google-pay.png" style="width:28px;height:28px" alt="GPay"><span>Google Pay</span></button><button class="pmb" onclick="selPM('phonepe',this)"><img src="https://img.icons8.com/color/48/phone-pe.png" style="width:28px;height:28px" alt="PhonePe"><span>PhonePe</span></button></div>
+        <div id="pyU"><div class="fg"><label class="fl">UPI ID</label><input type="text" class="fi" id="uI" placeholder="name@upi"></div><p style="color:var(--muted);font-size:.78rem;text-align:center;padding:.5rem">Pay via any UPI app</p></div>
         <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1.25rem"><div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem;font-weight:500">Order Summary</div><div id="pyS" style="max-height:120px;overflow-y:auto;margin-bottom:.5rem"></div><div style="border-top:1px solid var(--border);padding-top:.5rem"><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.3rem"><span style="color:var(--muted)">Subtotal</span><span id="pySub">Rs.0</span></div><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.3rem"><span style="color:var(--muted)">Shipping</span><span id="pyShip">Rs.0</span></div><div style="display:flex;justify-content:space-between;font-size:.9rem;padding-top:.5rem;border-top:1px solid var(--border);margin-top:.5rem"><span style="font-weight:600">Total</span><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--accent)" id="pyT">Rs.0</span></div></div></div>
         <div style="display:flex;gap:.75rem"><button class="bo bs" onclick="goPS(1)"><i class="fas fa-arrow-left"></i> Back</button><button class="bp" style="flex:1;justify-content:center" onclick="doPay()" id="pyBtn"><i class="fas fa-shield-halved"></i> Place Order</button></div>
       </div>
@@ -745,9 +741,6 @@ function selPM(m, btn) {
   payM = m;
   document.querySelectorAll('.pmb').forEach(b => b.classList.remove('a'));
   btn.classList.add('a');
-  document.getElementById('pyC').style.display = m === 'card' ? 'block' : 'none';
-  document.getElementById('pyU').style.display = m === 'upi' ? 'block' : 'none';
-  document.getElementById('pyD').style.display = m === 'cod' ? 'block' : 'none';
 }
 function clSE(el) { if (el) el.classList.remove('er'); document.getElementById('sEB') && document.getElementById('sEB').classList.remove('sh'); }
 function valShip() {
