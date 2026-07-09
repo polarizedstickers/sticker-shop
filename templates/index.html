@@ -628,11 +628,13 @@ async function swDash(tab, btn) {
   } else if (tab === 'orders') {
     try {
       const orders = await api('/api/orders');
+      window.__orders = orders;
       orders.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
       if (!orders.length) {
         c.innerHTML = '<div class="es"><i class="fas fa-inbox"></i><p>No orders yet</p></div>';
       } else {
-        c.innerHTML = `<div style="overflow-x:auto"><table class="dt"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Pay</th><th>Status</th><th>Date</th></tr></thead><tbody>${orders.map(o => `<tr><td style="font-weight:600;white-space:nowrap">${o.id}</td><td>${o.customer_name}</td><td style="font-size:.8rem;color:var(--muted)">${(o.items||[]).map(i => i.product_name + (i.size ? ' ('+i.size+')' : '') + ' x'+i.quantity).join(', ')}</td><td style="font-weight:700;color:var(--accent);white-space:nowrap">Rs.${o.total}</td><td style="text-transform:uppercase;font-size:.78rem">${o.payment_method}</td><td><select class="ss" onchange="updOrd('${o.id}',this.value)"><option value="confirmed"${o.status==='confirmed'?' selected':''}>Confirmed</option><option value="processing"${o.status==='processing'?' selected':''}>Processing</option><option value="shipped"${o.status==='shipped'?' selected':''}>Shipped</option><option value="delivered"${o.status==='delivered'?' selected':''}>Delivered</option><option value="cancelled"${o.status==='cancelled'?' selected':''}>Cancelled</option></select></td><td style="white-space:nowrap;font-size:.8rem;color:var(--muted)">${new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</td></tr>`).join('')}</tbody></table></div>`;
+        c.innerHTML = `<div style="overflow-x:auto"><table class="dt"><thead><tr><th>Order</th><th>Customer</th><th>Phone</th><th>Items</th><th>Total</th><th>Pay</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody>${orders.map(o => `<tr><td style="font-weight:600;white-space:nowrap">${o.id}</td><td>${o.customer_name}</td><td style="font-size:.82rem">${o.phone||'-'}</td><td style="font-size:.8rem;color:var(--muted)">${(o.items||[]).map(i => i.product_name + (i.size ? ' ('+i.size+')' : '') + ' x'+i.quantity).join(', ')}</td><td style="font-weight:700;color:var(--accent);white-space:nowrap">Rs.${o.total}</td><td style="text-transform:uppercase;font-size:.78rem">${o.payment_method}</td><td><select class="ss" onchange="updOrd('${o.id}',this.value)"><option value="confirmed"${o.status==='confirmed'?' selected':''}>Confirmed</option><option value="processing"${o.status==='processing'?' selected':''}>Processing</option><option value="shipped"${o.status==='shipped'?' selected':''}>Shipped</option><option value="delivered"${o.status==='delivered'?' selected':''}>Delivered</option><option value="cancelled"${o.status==='cancelled'?' selected':''}>Cancelled</option></select></td><td style="white-space:nowrap;font-size:.8rem;color:var(--muted)">${new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</td><td><button class="cb" onclick="showShip('${o.id}')" title="Shipping Details"><i class="fas fa-truck"></i></button></td></tr>`).join('')}</tbody></table></div>
+        <div id="shipD" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-top:1rem"><div id="shipC"></div></div>`;
       }
     } catch(e) { c.innerHTML = '<div class="es"><p>Failed to load</p></div>'; }
   } else if (tab === 'products') {
@@ -702,6 +704,19 @@ async function delProd(id) {
 async function updOrd(id, status) {
   try { await api('/api/orders/'+id, { method: 'PATCH', body: JSON.stringify({ status }) }); toast(id + ' → ' + status); }
   catch(e) { toast('Failed'); }
+}
+
+function showShip(id) {
+  const d = document.getElementById('shipD'), c = document.getElementById('shipC');
+  const all = document.querySelectorAll('#aD .dt tbody tr');
+  let order = null;
+  for (const o of window.__orders || []) { if (o.id === id) { order = o; break; } }
+  if (!order) return;
+  d.style.display = d.style.display === 'block' && c.dataset.id === id ? 'none' : 'block';
+  if (d.style.display === 'block') {
+    c.dataset.id = id;
+    c.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:.85rem"><div><strong>Name</strong><br><span style="color:var(--muted)">${order.customer_name||'-'}</span></div><div><strong>Phone</strong><br><span style="color:var(--muted)">${order.phone||'-'}</span></div><div><strong>Email</strong><br><span style="color:var(--muted)">${order.email||'-'}</span></div><div><strong>Address</strong><br><span style="color:var(--muted)">${order.address||'-'}</span></div><div><strong>City</strong><br><span style="color:var(--muted)">${order.city||'-'}</span></div><div><strong>State</strong><br><span style="color:var(--muted)">${order.state||'-'}</span></div><div><strong>PIN</strong><br><span style="color:var(--muted)">${order.pin||'-'}</span></div><div><strong>Payment</strong><br><span style="color:var(--muted);text-transform:uppercase">${order.payment_method||'-'}</span></div></div>`;
+  }
 }
 
 // ── Checkout ──────────────────────────────────────────────────
