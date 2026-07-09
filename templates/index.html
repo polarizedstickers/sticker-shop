@@ -441,8 +441,9 @@ function selSize(el, pid, sid) {
 function addCQ(pid) {
   const p = prods.find(x => x.id === pid);
   if (!p) return;
-  const sz = (p.sizes && p.sizes.length > 0) ? p.sizes[0] : null;
-  addC(pid, sz ? sz.id : null);
+  let sid = selSizes[pid];
+  if (!sid || !p.sizes.some(s => s.id === sid)) sid = p.sizes.length > 0 ? p.sizes[0].id : null;
+  addC(pid, sid);
 }
 
 function addC(pid, sid) {
