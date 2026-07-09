@@ -22,7 +22,10 @@ class DB:
     def execute(self, sql, params=None):
         if params is None: params = ()
         if not self._is_pg:
-            return self.conn.execute(sql.replace('%s', '?'), params)
+            sql = sql.replace('%s', '?')
+            if ' RETURNING ' in sql.upper():
+                sql = sql[:sql.upper().index(' RETURNING ')]
+            return self.conn.execute(sql, params)
         cur = self.conn.cursor(cursor_factory=__import__('psycopg2.extras').extras.RealDictCursor)
         cur.execute(sql, params)
         return cur
@@ -78,7 +81,10 @@ def init_db():
             db.commit()
         except Exception:
             pass
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        pass
 
 def require_admin(f):
     @wraps(f)
