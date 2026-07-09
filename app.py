@@ -343,6 +343,30 @@ def run_seed():
 def seed():
     return jsonify({'ok': True, 'count': len(SEED_DATA), 'seeded': run_seed()})
 
+@app.route('/api/products/seed', methods=['POST'])
+@require_admin
+def import_products():
+    data = request.get_json()
+    items = data.get('products', [])
+    db = get_db()
+    db.execute("DELETE FROM product_sizes")
+    db.execute("DELETE FROM products")
+    count = 0
+    for p in items:
+        cur = db.execute(
+            "INSERT INTO products (name, category, image, badge) VALUES (?,?,?,?)",
+            (p['name'], p.get('category', ''), p.get('image', ''), p.get('badge', ''))
+        )
+        pid = cur.lastrowid
+        for s in p.get('sizes', []):
+            db.execute(
+                "INSERT INTO product_sizes (product_id, label, price, original_price) VALUES (?,?,?,?)",
+                (pid, s['label'], s['price'], s.get('originalPrice'))
+            )
+        count += 1
+    db.commit()
+    return jsonify({'ok': True, 'count': count})
+
 with app.app_context():
     init_db()
     if run_seed():

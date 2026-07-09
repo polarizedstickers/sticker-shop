@@ -638,7 +638,7 @@ async function swDash(tab, btn) {
       }
     } catch(e) { c.innerHTML = '<div class="es"><p>Failed to load</p></div>'; }
   } else if (tab === 'products') {
-    c.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem"><h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem">Products (${prods.length})</h3><button class="bp bs" onclick="togAP()" style="background:linear-gradient(135deg,var(--accent2),#d97706);color:#000"><i class="fas fa-plus"></i> Add</button></div>
+    c.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem"><h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem">Products (${prods.length})</h3><div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="bp bs" onclick="togAP()" style="background:linear-gradient(135deg,var(--accent2),#d97706);color:#000"><i class="fas fa-plus"></i> Add</button><button class="bs" onclick="expProds()" style="background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.2)"><i class="fas fa-download"></i> Export</button><button class="bs" onclick="document.getElementById('impF').click()" style="background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.2)"><i class="fas fa-upload"></i> Import</button><input type="file" id="impF" accept=".json" style="display:none" onchange="impProds(event)"></div></div>
     <div id="apF" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem">
       <h4 style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:1rem">New Product</h4>
       <div class="fg"><label class="fl">Name *</label><input type="text" class="fi" id="apN" placeholder="Product name"></div>
@@ -717,6 +717,30 @@ function showShip(id) {
     c.dataset.id = id;
     c.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:.85rem"><div><strong>Name</strong><br><span style="color:var(--muted)">${order.customer_name||'-'}</span></div><div><strong>Phone</strong><br><span style="color:var(--muted)">${order.phone||'-'}</span></div><div><strong>Email</strong><br><span style="color:var(--muted)">${order.email||'-'}</span></div><div><strong>Address</strong><br><span style="color:var(--muted)">${order.address||'-'}</span></div><div><strong>City</strong><br><span style="color:var(--muted)">${order.city||'-'}</span></div><div><strong>State</strong><br><span style="color:var(--muted)">${order.state||'-'}</span></div><div><strong>PIN</strong><br><span style="color:var(--muted)">${order.pin||'-'}</span></div><div><strong>Payment</strong><br><span style="color:var(--muted);text-transform:uppercase">${order.payment_method||'-'}</span></div></div>`;
   }
+}
+
+// ── Product Export/Import ─────────────────────────────────────
+function expProds() {
+  const data = prods.map(p => ({
+    name: p.name, category: p.category, image: p.image, badge: p.badge || '',
+    sizes: (p.sizes||[]).map(s => ({ label: s.label, price: s.price, originalPrice: s.original_price || null }))
+  }));
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'products-backup.json'; a.click();
+  toast('Exported ' + data.length + ' products');
+}
+async function impProds(e) {
+  const file = e.target.files[0]; if (!file) return;
+  try {
+    const text = await file.text();
+    const items = JSON.parse(text);
+    if (!items.length) { toast('Empty file'); return; }
+    const res = await api('/api/products/seed', { method: 'POST', body: JSON.stringify({ products: items }) });
+    toast('Imported ' + res.count + ' products');
+    await loadProds();
+    swDash('products', document.querySelectorAll('#dTbs .dtab')[2]);
+  } catch(e) { toast('Import failed: ' + e.message); }
+  e.target.value = '';
 }
 
 // ── Checkout ──────────────────────────────────────────────────
