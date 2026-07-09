@@ -48,8 +48,17 @@ def init_db():
             original_price INTEGER,
             FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
         );
+        CREATE TABLE IF NOT EXISTS customers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            phone TEXT NOT NULL DEFAULT '',
+            password_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
         CREATE TABLE IF NOT EXISTS orders (
             id TEXT PRIMARY KEY,
+            customer_id INTEGER,
             customer_name TEXT NOT NULL,
             email TEXT NOT NULL DEFAULT '',
             phone TEXT NOT NULL DEFAULT '',
@@ -60,7 +69,8 @@ def init_db():
             payment_method TEXT NOT NULL DEFAULT 'card',
             status TEXT NOT NULL DEFAULT 'confirmed',
             total INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (customer_id) REFERENCES customers(id)
         );
         CREATE TABLE IF NOT EXISTS order_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,6 +86,11 @@ def init_db():
         );
     """)
     db.commit()
+    try:
+        db.execute("ALTER TABLE orders ADD COLUMN customer_id INTEGER REFERENCES customers(id)")
+        db.commit()
+    except sqlite3.OperationalError:
+        pass
 
 def require_admin(f):
     @wraps(f)
@@ -162,9 +177,9 @@ def create_order():
     db = get_db()
     oid = 'PST-' + str(int(datetime.now().timestamp() * 1000))[-6:]
     db.execute(
-        """INSERT INTO orders (id, customer_name, email, phone, address, city, pin, state, payment_method, status, total)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-        (oid, data['name'], data.get('email', ''), data.get('phone', ''),
+        """INSERT INTO orders (id, customer_id, customer_name, email, phone, address, city, pin, state, payment_method, status, total)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (oid, data.get('customerId'), data['name'], data.get('email', ''), data.get('phone', ''),
          data.get('address', ''), data.get('city', ''), data.get('pin', ''),
          data.get('state', ''), data.get('paymentMethod', 'card'), 'confirmed', int(data['total']))
     )
@@ -214,6 +229,42 @@ def admin_login():
     if hashlib.sha256(data.get('password', '').encode()).hexdigest() == ADMIN_PASSWORD_HASH:
         return jsonify({'token': ADMIN_PASSWORD_HASH})
     return jsonify({'error': 'Wrong password'}), 401
+
+@app.route('/api/auth/signup', methods=['POST'])
+def customer_signup():
+    data = request.get_json()
+    name = data.get('name', '').strip()
+    email = data.get('email', '').strip().lower()
+    phone = data.get('phone', '').strip()
+    password = data.get('password', '')
+    if not name or not email or not password:
+        return jsonify({'error': 'Name, email, and password required'}), 400
+    db = get_db()
+    exists = db.execute("SELECT id FROM customers WHERE email=?", (email,)).fetchone()
+    if exists:
+        return jsonify({'error': 'Email already registered'}), 409
+    pw_hash = hashlib.sha256(password.encode()).hexdigest()
+    cur = db.execute(
+        "INSERT INTO customers (name, email, phone, password_hash) VALUES (?,?,?,?)",
+        (name, email, phone, pw_hash)
+    )
+    db.commit()
+    return jsonify({'id': cur.lastrowid, 'name': name, 'email': email}), 201
+
+@app.route('/api/auth/login', methods=['POST'])
+def customer_login():
+    data = request.get_json()
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    if not email or not password:
+        return jsonify({'error': 'Email and password required'}), 400
+    db = get_db()
+    row = db.execute("SELECT * FROM customers WHERE email=?", (email,)).fetchone()
+    if not row:
+        return jsonify({'error': 'No account found. Please sign up.'}), 401
+    if hashlib.sha256(password.encode()).hexdigest() != row['password_hash']:
+        return jsonify({'error': 'Wrong password'}), 401
+    return jsonify({'id': row['id'], 'name': row['name'], 'email': row['email'], 'phone': row['phone']})
 
 # ── Image upload ──────────────────────────────────────────
 

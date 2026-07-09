@@ -138,6 +138,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
   .sbx{position:relative}.sbx input{padding:.6rem 1rem .6rem 2.5rem;background:var(--ib);border:1px solid var(--border);border-radius:50px;color:var(--fg);font-family:'Space Grotesk',sans-serif;font-size:.85rem;outline:0;transition:border-color .3s,width .3s;width:200px}
   .sbx input:focus{border-color:var(--accent);width:260px}.sbx i{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.8rem}
   footer a{color:var(--muted);text-decoration:none;transition:color .3s}footer a:hover{color:var(--accent)}
+  #auLb.a,#auSb.a{color:var(--fg);border-bottom:2px solid var(--accent)}
 </style>
 </head>
 <body>
@@ -200,12 +201,22 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
 
 <!-- AUTH MODAL -->
 <div class="mo" id="auM" onclick="if(event.target===this)clAu()">
-  <div class="mb">
-    <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between"><h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem">Login</h3><button onclick="clAu()" style="background:0;border:0;color:var(--muted);font-size:1.2rem;padding:.25rem"><i class="fas fa-xmark"></i></button></div>
-    <div style="padding:1.5rem">
+  <div class="mb" style="width:420px">
+    <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem" id="auT">Login</h3>
+      <button onclick="clAu()" style="background:0;border:0;color:var(--muted);font-size:1.2rem;padding:.25rem"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div style="display:flex;border-bottom:1px solid var(--border)">
+      <button id="auLb" class="a" onclick="swAuTab('login')" style="flex:1;padding:.75rem;background:0;border:0;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:.85rem;font-weight:500;transition:all .2s">Login</button>
+      <button id="auSb" onclick="swAuTab('signup')" style="flex:1;padding:.75rem;background:0;border:0;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:.85rem;font-weight:500;transition:all .2s">Sign Up</button>
+    </div>
+    <div style="padding:1.5rem" id="auC">
       <div class="fg"><label class="fl">Name</label><input type="text" class="fi" id="auN" placeholder="Your name"></div>
+      <div class="fg" id="auPhG" style="display:none"><label class="fl">Phone</label><input type="tel" class="fi" id="auPh" placeholder="Phone number"></div>
       <div class="fg"><label class="fl">Email</label><input type="email" class="fi" id="auE" placeholder="you@example.com"></div>
-      <button class="bp" style="width:100%;justify-content:center" onclick="doLogin()"><i class="fas fa-arrow-right-to-bracket"></i> Login</button>
+      <div class="fg"><label class="fl">Password</label><input type="password" class="fi" id="auPw" placeholder="Password"></div>
+      <div class="fe" id="auEr"><i class="fas fa-circle-exclamation"></i> <span id="auErT"></span></div>
+      <button class="bp" style="width:100%;justify-content:center;margin-top:.5rem" id="auBtn" onclick="doAu()"><i class="fas fa-arrow-right-to-bracket"></i> <span id="auBtnT">Login</span></button>
     </div>
   </div>
 </div>
@@ -452,13 +463,46 @@ function renderUA() {
   }
 }
 
-function openAu() { document.getElementById('auM').classList.add('op'); document.body.style.overflow = 'hidden'; }
+let auTab = 'login';
+function openAu() {
+  swAuTab('login');
+  document.getElementById('auM').classList.add('op');
+  document.body.style.overflow = 'hidden';
+}
 function clAu() { document.getElementById('auM').classList.remove('op'); document.body.style.overflow = ''; }
-function doLogin() {
+function swAuTab(t) {
+  auTab = t;
+  document.getElementById('auLb').className = t === 'login' ? 'a' : '';
+  document.getElementById('auSb').className = t === 'signup' ? 'a' : '';
+  document.getElementById('auT').textContent = t === 'login' ? 'Login' : 'Sign Up';
+  document.getElementById('auBtnT').textContent = t === 'login' ? 'Login' : 'Create Account';
+  document.getElementById('auBtn').innerHTML = (t === 'login' ? '<i class="fas fa-arrow-right-to-bracket"></i> Login' : '<i class="fas fa-user-plus"></i> Create Account');
+  document.getElementById('auPhG').style.display = t === 'signup' ? 'block' : 'none';
+  document.getElementById('auEr').classList.remove('sh');
+  document.getElementById('auN').focus();
+}
+async function doAu() {
+  document.getElementById('auEr').classList.remove('sh');
   const n = document.getElementById('auN').value.trim();
-  const e = document.getElementById('auE').value.trim();
-  if (!n || !e) { toast('Fill name and email'); return; }
-  curUser = { name: n, email: e }; saveUser(); renderUA(); clAu(); toast('Welcome, ' + n + '!');
+  const e = document.getElementById('auE').value.trim().toLowerCase();
+  const p = document.getElementById('auPw').value;
+  if (!n || !e || !p) { toast('Fill all fields'); return; }
+  if (auTab === 'signup') {
+    const ph = document.getElementById('auPh').value.trim();
+    try {
+      const res = await api('/api/auth/signup', { method: 'POST', body: JSON.stringify({ name: n, email: e, phone: ph, password: p }) });
+      if (res.error) { document.getElementById('auErT').textContent = res.error; document.getElementById('auEr').classList.add('sh'); return; }
+      curUser = { id: res.id, name: res.name, email: res.email };
+      saveUser(); renderUA(); clAu(); toast('Welcome, ' + n + '!');
+    } catch(e) { toast('Signup failed'); }
+  } else {
+    try {
+      const res = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email: e, password: p }) });
+      if (res.error) { document.getElementById('auErT').textContent = res.error; document.getElementById('auEr').classList.add('sh'); return; }
+      curUser = res;
+      saveUser(); renderUA(); clAu(); toast('Welcome back, ' + res.name + '!');
+    } catch(e) { toast('Login failed'); }
+  }
 }
 function doLogout() { curUser = null; saveUser(); renderUA(); toast('Logged out'); }
 
@@ -683,6 +727,7 @@ async function doPay() {
   const sub = cart.reduce((s, x) => s + x.price * x.qty, 0), sh = sub >= 499 ? 0 : 49, tot = sub + sh;
   try {
     const res = await api('/api/orders', { method: 'POST', body: JSON.stringify({
+      customerId: curUser ? curUser.id : null,
       name: document.getElementById('shN').value, email: document.getElementById('shE').value,
       phone: document.getElementById('shPh').value, address: document.getElementById('shA').value,
       city: document.getElementById('shC').value, pin: document.getElementById('shPi').value,
