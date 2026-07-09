@@ -89,45 +89,69 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
 .dtab{padding:.5rem 1.1rem;border-radius:10px;border:0;background:0;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:.82rem;font-weight:500;transition:all .25s;display:flex;align-items:center;gap:.4rem}
 .dtab:hover{color:var(--fg);background:rgba(255,255,255,.04)}.dtab.a{background:var(--accent);color:#fff;font-weight:600}
 @media(max-width:900px){
-  .sbx{width:100%}.sbx input{width:100%}.sbx input:focus{width:100%}
-  nav>div{padding:.7rem 1rem}
   .qa{opacity:1;transform:none}
   .pm{flex-direction:column}.pmb{display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem}.pmb i{margin-bottom:0;font-size:1.1rem}
   #dC .dt{display:block;overflow-x:auto}
+  nav>div{padding:.7rem 1rem;gap:.6rem}
+  #logoW span{font-size:1rem}
+  #logoW div{width:28px;height:28px}
+  .sbx{display:none}
+  .sbx input{width:100%}
+  #mSrchBtn{display:block!important}
+  .sbx.sh{display:flex!important;position:fixed;top:56px;left:0;width:100%;padding:.6rem 1rem;background:rgba(10,10,10,.96);border-bottom:1px solid var(--border);z-index:99}
+  .sbx.sh input{width:100%}
+  header{padding:5rem 1.25rem 2.5rem;min-height:auto}
+  .ht{font-size:clamp(2rem,10vw,3.5rem)}
+  .ast{-webkit-text-stroke:1.5px var(--accent)}
 }
 @media(max-width:768px){
-  .cp{width:100vw;max-width:100vw}
+  .cp{width:100vw;max-width:100vw;border-left:0}
   .dtab span{display:none}
-  header{padding:5rem 1.25rem 3rem;min-height:auto}
-  .ht{font-size:clamp(2.2rem,10vw,4rem)}
-  #pG{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.85rem}
-  .pi{padding:.75rem .85rem 1rem}
-  .pn{font-size:.9rem}
-  .ci{padding:.75rem 1rem;gap:.65rem}.ci img{width:48px;height:48px}
-  .ch{padding:1rem 1rem}
-  .cf{padding:1rem}
-  .mb{padding:0;border-radius:14px}
+  #pG{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.75rem}
+  .pi{padding:.65rem .75rem .9rem}
+  .pn{font-size:.85rem}
+  .pnow{font-size:1rem}
+  .ci{padding:.65rem .85rem;gap:.5rem}.ci img{width:44px;height:44px}
+  .ch{padding:.85rem 1rem}
+  .cf{padding:.85rem 1rem}
+  .cf button.bp,.cf button.bo{font-size:.8rem;padding:.7rem 1rem}
+  .mb{border-radius:14px 14px 0 0;max-width:100%;max-height:92vh;margin-top:auto;transform:translateY(20px);transition:transform .35s,border-radius .35s}
+  .mo.op .mb{transform:translateY(0)}
+  .mo{padding:0;align-items:flex-end}
   .mb>div{padding:1rem 1.25rem}
   #dC{padding:0!important}
-  .dn{padding:.75rem 1rem}
+  .dn{padding:.65rem .85rem}
   .cig{grid-template-columns:1fr}
-  .dt td,.dt th{padding:.5rem .6rem;font-size:.75rem}
+  .dt td,.dt th{padding:.4rem .5rem;font-size:.7rem;white-space:nowrap}
+  .dt{font-size:.75rem}
   #apF .fg>div{grid-template-columns:1fr!important}
   footer{padding:2rem 1.25rem}
   footer>div>div{grid-template-columns:1fr 1fr!important;gap:1.5rem}
-  .tk{font-size:.7rem;padding:.4rem 0}
-  .tst{bottom:1rem;right:1rem;left:1rem;font-size:.82rem}
+  .tk{font-size:.65rem;padding:.35rem 0}
+  .tst{bottom:0;right:0;left:0;border-radius:0;font-size:.82rem;justify-content:center}
+  #pyM .mb{width:100%}
+  .fi{font-size:.85rem;padding:.65rem .85rem}
+  .fl{font-size:.75rem}
+  .bp,.bo{padding:.7rem 1.5rem;font-size:.85rem}
+  .bs{padding:.5rem 1rem;font-size:.78rem}
 }
 @media(max-width:480px){
-  header{padding:4rem 1rem 2.5rem}
-  #pG{grid-template-columns:1fr 1fr;gap:.65rem}
-  .sz-btn{font-size:.65rem;padding:.25rem .4rem}
-  .pnow{font-size:1rem}
-  .pi{padding:.6rem .65rem .85rem}
+  header{padding:4rem 1rem 2rem}
+  #pG{grid-template-columns:1fr 1fr;gap:.5rem}
+  .sz-btn{font-size:.6rem;padding:.2rem .35rem}.sz-price{font-size:.6rem}
+  .pi{padding:.5rem .55rem .75rem}
+  .pn{font-size:.8rem}.pcat{font-size:.6rem}
+  .pr{gap:.25rem}
   footer>div>div{grid-template-columns:1fr!important;text-align:center}
   footer>div>div>div>div{justify-content:center}
-  .mo{padding:.5rem}
+  .mo{padding:0}
   .mb{max-height:95vh}
+  .ci img{width:36px;height:36px}
+  .ci{font-size:.75rem;padding:.5rem .7rem}
+  #logoW span{font-size:.85rem}
+  #logoW div{width:24px;height:24px}
+  .qb{width:32px;height:32px;font-size:.8rem}
+  .pmb{padding:.6rem .85rem;font-size:.8rem}.pmb i{font-size:1rem}
 }
 </style>
 <style>
@@ -152,6 +176,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
       <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center"><i class="fas fa-fire" style="color:#fff;font-size:.95rem"></i></div>
       <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem">POSTERIZED STICKERS</span>
     </div>
+    <button id="mSrchBtn" onclick="togMSearch()" style="display:none;background:0;border:0;color:var(--muted);font-size:1rem;padding:.25rem" aria-label="Search"><i class="fas fa-search"></i></button>
     <div class="sbx" style="flex-shrink:0"><i class="fas fa-search"></i><input type="text" id="sI" placeholder="Search..." aria-label="Search"></div>
     <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
       <button style="background:0;border:0;color:var(--muted);font-size:1rem;padding:.25rem" onclick="openAdm()" aria-label="Admin"><i class="fas fa-shield-halved"></i></button>
@@ -450,6 +475,16 @@ function uCI() {
   const el = document.getElementById('cCnt');
   if (c > 0) { el.style.display = 'flex'; el.textContent = c; } else el.style.display = 'none';
 }
+function togMSearch() {
+  const s = document.querySelector('.sbx');
+  s.classList.toggle('sh');
+  if (s.classList.contains('sh')) setTimeout(() => s.querySelector('input').focus(), 100);
+  else s.querySelector('input').blur();
+}
+document.addEventListener('click', function(e) {
+  const s = document.querySelector('.sbx');
+  if (s.classList.contains('sh') && !s.contains(e.target) && e.target.id !== 'mSrchBtn') s.classList.remove('sh');
+});
 function togCart() {
   document.getElementById('cOv').classList.toggle('op');
   document.getElementById('cPn').classList.toggle('op');
