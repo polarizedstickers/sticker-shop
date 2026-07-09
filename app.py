@@ -1,4 +1,4 @@
-import sqlite3, os, json, hashlib, secrets, uuid
+import os, json, hashlib, secrets, uuid
 from decimal import Decimal
 from datetime import datetime
 from functools import wraps
@@ -12,85 +12,73 @@ UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 ADMIN_PASSWORD_HASH = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
+DATABASE_URL = os.environ.get('DATABASE_URL')
+IS_PG = bool(DATABASE_URL)
+
+class DB:
+    def __init__(self, conn, is_pg):
+        self.conn = conn
+        self._is_pg = is_pg
+    def execute(self, sql, params=None):
+        if params is None: params = ()
+        if not self._is_pg:
+            return self.conn.execute(sql.replace('%s', '?'), params)
+        cur = self.conn.cursor(cursor_factory=__import__('psycopg2.extras').extras.RealDictCursor)
+        cur.execute(sql, params)
+        return cur
+    def commit(self):
+        self.conn.commit()
+    def rollback(self):
+        self.conn.rollback()
+    def close(self):
+        self.conn.close()
 
 def get_db():
-    if 'db' not in g:
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA journal_mode=WAL")
-        g.db.execute("PRAGMA foreign_keys=ON")
+    if 'db' in g:
+        return g.db
+    if IS_PG:
+        import psycopg2
+        conn = psycopg2.connect(DATABASE_URL)
+        conn.autocommit = False
+        g.db = DB(conn, True)
+    else:
+        import sqlite3
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+        g.db = DB(conn, False)
     return g.db
 
 def close_db(e=None):
     db = g.pop('db', None)
-    if db is not None:
+    if db:
         db.close()
 
 app.teardown_appcontext(close_db)
 
 def init_db():
     db = get_db()
-    db.executescript("""
-        CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            category TEXT NOT NULL DEFAULT '',
-            description TEXT NOT NULL DEFAULT '',
-            image TEXT NOT NULL DEFAULT '',
-            badge TEXT NOT NULL DEFAULT '',
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-        CREATE TABLE IF NOT EXISTS product_sizes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id INTEGER NOT NULL,
-            label TEXT NOT NULL,
-            price INTEGER NOT NULL,
-            original_price INTEGER,
-            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-        );
-        CREATE TABLE IF NOT EXISTS customers (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            phone TEXT NOT NULL DEFAULT '',
-            password_hash TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-        CREATE TABLE IF NOT EXISTS orders (
-            id TEXT PRIMARY KEY,
-            customer_id INTEGER,
-            customer_name TEXT NOT NULL,
-            email TEXT NOT NULL DEFAULT '',
-            phone TEXT NOT NULL DEFAULT '',
-            address TEXT NOT NULL DEFAULT '',
-            city TEXT NOT NULL DEFAULT '',
-            pin TEXT NOT NULL DEFAULT '',
-            state TEXT NOT NULL DEFAULT '',
-            payment_method TEXT NOT NULL DEFAULT 'card',
-            status TEXT NOT NULL DEFAULT 'confirmed',
-            total INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            FOREIGN KEY (customer_id) REFERENCES customers(id)
-        );
-        CREATE TABLE IF NOT EXISTS order_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            order_id TEXT NOT NULL,
-            product_id INTEGER,
-            product_name TEXT NOT NULL,
-            product_image TEXT NOT NULL DEFAULT '',
-            size TEXT NOT NULL DEFAULT '',
-            quantity INTEGER NOT NULL DEFAULT 1,
-            price INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-            FOREIGN KEY (product_id) REFERENCES products(id)
-        );
-    """)
+    if IS_PG:
+        db.execute("""CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL DEFAULT '', description TEXT NOT NULL DEFAULT '', image TEXT NOT NULL DEFAULT '', badge TEXT NOT NULL DEFAULT '', created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)""")
+        db.execute("""CREATE TABLE IF NOT EXISTS product_sizes (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, label TEXT NOT NULL, price INTEGER NOT NULL, original_price INTEGER)""")
+        db.execute("""CREATE TABLE IF NOT EXISTS customers (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, phone TEXT NOT NULL DEFAULT '', password_hash TEXT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)""")
+        db.execute("""CREATE TABLE IF NOT EXISTS orders (id TEXT PRIMARY KEY, customer_id INTEGER REFERENCES customers(id), customer_name TEXT NOT NULL, email TEXT NOT NULL DEFAULT '', phone TEXT NOT NULL DEFAULT '', address TEXT NOT NULL DEFAULT '', city TEXT NOT NULL DEFAULT '', pin TEXT NOT NULL DEFAULT '', state TEXT NOT NULL DEFAULT '', payment_method TEXT NOT NULL DEFAULT 'card', status TEXT NOT NULL DEFAULT 'confirmed', total INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)""")
+        db.execute("""CREATE TABLE IF NOT EXISTS order_items (id SERIAL PRIMARY KEY, order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE, product_id INTEGER REFERENCES products(id), product_name TEXT NOT NULL, product_image TEXT NOT NULL DEFAULT '', size TEXT NOT NULL DEFAULT '', quantity INTEGER NOT NULL DEFAULT 1, price INTEGER NOT NULL DEFAULT 0)""")
+    else:
+        db.conn.executescript("""
+            CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, category TEXT NOT NULL DEFAULT '', description TEXT NOT NULL DEFAULT '', image TEXT NOT NULL DEFAULT '', badge TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')));
+            CREATE TABLE IF NOT EXISTS product_sizes (id INTEGER PRIMARY KEY AUTOINCREMENT, product_id INTEGER NOT NULL, label TEXT NOT NULL, price INTEGER NOT NULL, original_price INTEGER, FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE);
+            CREATE TABLE IF NOT EXISTS customers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, phone TEXT NOT NULL DEFAULT '', password_hash TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')));
+            CREATE TABLE IF NOT EXISTS orders (id TEXT PRIMARY KEY, customer_id INTEGER, customer_name TEXT NOT NULL, email TEXT NOT NULL DEFAULT '', phone TEXT NOT NULL DEFAULT '', address TEXT NOT NULL DEFAULT '', city TEXT NOT NULL DEFAULT '', pin TEXT NOT NULL DEFAULT '', state TEXT NOT NULL DEFAULT '', payment_method TEXT NOT NULL DEFAULT 'card', status TEXT NOT NULL DEFAULT 'confirmed', total INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY (customer_id) REFERENCES customers(id));
+            CREATE TABLE IF NOT EXISTS order_items (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id TEXT NOT NULL, product_id INTEGER, product_name TEXT NOT NULL, product_image TEXT NOT NULL DEFAULT '', size TEXT NOT NULL DEFAULT '', quantity INTEGER NOT NULL DEFAULT 1, price INTEGER NOT NULL DEFAULT 0, FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE, FOREIGN KEY (product_id) REFERENCES products(id));
+        """)
+        try:
+            db.execute("ALTER TABLE orders ADD COLUMN customer_id INTEGER REFERENCES customers(id)")
+            db.commit()
+        except Exception:
+            pass
     db.commit()
-    try:
-        db.execute("ALTER TABLE orders ADD COLUMN customer_id INTEGER REFERENCES customers(id)")
-        db.commit()
-    except sqlite3.OperationalError:
-        pass
 
 def require_admin(f):
     @wraps(f)
@@ -109,17 +97,18 @@ def get_products():
     cur = db.execute("SELECT * FROM products ORDER BY created_at DESC")
     products = [dict(r) for r in cur.fetchall()]
     for p in products:
-        sz = db.execute("SELECT * FROM product_sizes WHERE product_id=?", (p['id'],))
+        sz = db.execute("SELECT * FROM product_sizes WHERE product_id=%s", (p['id'],))
         p['sizes'] = [dict(s) for s in sz.fetchall()]
     return jsonify(products)
 
 @app.route('/api/products/<int:pid>', methods=['GET'])
 def get_product(pid):
     db = get_db()
-    p = db.execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone()
-    if not p: return jsonify({'error': 'Not found'}), 404
+    p = db.execute("SELECT * FROM products WHERE id=%s", (pid,)).fetchone()
+    if not p:
+        return jsonify({'error': 'Not found'}), 404
     p = dict(p)
-    sz = db.execute("SELECT * FROM product_sizes WHERE product_id=?", (pid,))
+    sz = db.execute("SELECT * FROM product_sizes WHERE product_id=%s", (pid,))
     p['sizes'] = [dict(s) for s in sz.fetchall()]
     return jsonify(p)
 
@@ -129,14 +118,14 @@ def add_product():
     data = request.get_json()
     db = get_db()
     cur = db.execute(
-        "INSERT INTO products (name, category, description, image, badge) VALUES (?,?,?,?,?)",
+        "INSERT INTO products (name, category, description, image, badge) VALUES (%s,%s,%s,%s,%s) RETURNING id",
         (data['name'], data.get('category', ''), data.get('description', ''),
          data.get('image', ''), data.get('badge', ''))
     )
-    pid = cur.lastrowid
+    pid = cur.fetchone()['id'] if IS_PG else cur.lastrowid
     for s in data.get('sizes', []):
         db.execute(
-            "INSERT INTO product_sizes (product_id, label, price, original_price) VALUES (?,?,?,?)",
+            "INSERT INTO product_sizes (product_id, label, price, original_price) VALUES (%s,%s,%s,%s)",
             (pid, s['label'], int(s['price']), int(s['originalPrice']) if s.get('originalPrice') else None)
         )
     db.commit()
@@ -146,7 +135,7 @@ def add_product():
 @require_admin
 def delete_product(pid):
     db = get_db()
-    db.execute("DELETE FROM products WHERE id=?", (pid,))
+    db.execute("DELETE FROM products WHERE id=%s", (pid,))
     db.commit()
     return jsonify({'ok': True})
 
@@ -160,13 +149,13 @@ def get_orders():
     if token == ADMIN_PASSWORD_HASH:
         rows = db.execute("SELECT * FROM orders ORDER BY created_at DESC").fetchall()
     elif email:
-        rows = db.execute("SELECT * FROM orders WHERE email=? ORDER BY created_at DESC", (email,)).fetchall()
+        rows = db.execute("SELECT * FROM orders WHERE email=%s ORDER BY created_at DESC", (email,)).fetchall()
     else:
         return jsonify({'error': 'Not authorized'}), 401
     orders = []
     for r in rows:
         o = dict(r)
-        items = db.execute("SELECT * FROM order_items WHERE order_id=?", (o['id'],)).fetchall()
+        items = db.execute("SELECT * FROM order_items WHERE order_id=%s", (o['id'],)).fetchall()
         o['items'] = [dict(i) for i in items]
         orders.append(o)
     return jsonify(orders)
@@ -178,20 +167,19 @@ def create_order():
     oid = 'PST-' + str(int(datetime.now().timestamp() * 1000))[-6:]
     cust_id = data.get('customerId')
     if cust_id:
-        exists = db.execute("SELECT id FROM customers WHERE id=?", (cust_id,)).fetchone()
+        exists = db.execute("SELECT id FROM customers WHERE id=%s", (cust_id,)).fetchone()
         if not exists:
             cust_id = None
     try:
         db.execute(
-            """INSERT INTO orders (id, customer_id, customer_name, email, phone, address, city, pin, state, payment_method, status, total)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+            "INSERT INTO orders (id, customer_id, customer_name, email, phone, address, city, pin, state, payment_method, status, total) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (oid, cust_id, data['name'], data.get('email', ''), data.get('phone', ''),
              data.get('address', ''), data.get('city', ''), data.get('pin', ''),
              data.get('state', ''), data.get('paymentMethod', 'card'), 'confirmed', int(data['total']))
         )
         for item in data.get('items', []):
             db.execute(
-                "INSERT INTO order_items (order_id, product_id, product_name, product_image, size, quantity, price) VALUES (?,?,?,?,?,?,?)",
+                "INSERT INTO order_items (order_id, product_id, product_name, product_image, size, quantity, price) VALUES (%s,%s,%s,%s,%s,%s,%s)",
                 (oid, item.get('productId'), item['name'], item.get('image', ''),
                  item.get('size', ''), int(item.get('qty', 1)), int(item['price']))
             )
@@ -206,7 +194,7 @@ def create_order():
 def update_order(order_id):
     data = request.get_json()
     db = get_db()
-    db.execute("UPDATE orders SET status=? WHERE id=?", (data['status'], order_id))
+    db.execute("UPDATE orders SET status=%s WHERE id=%s", (data['status'], order_id))
     db.commit()
     return jsonify({'ok': True})
 
@@ -222,7 +210,7 @@ def dashboard():
     pending = sum(1 for o in orders if o['status'] in ('confirmed', 'processing'))
     recent = sorted(orders, key=lambda x: x['created_at'], reverse=True)[:10]
     for o in recent:
-        items = db.execute("SELECT * FROM order_items WHERE order_id=?", (o['id'],)).fetchall()
+        items = db.execute("SELECT * FROM order_items WHERE order_id=%s", (o['id'],)).fetchall()
         o['items'] = [dict(i) for i in items]
     return jsonify({
         'revenue': revenue, 'totalOrders': len(orders),
@@ -249,16 +237,17 @@ def customer_signup():
     if not name or not email or not password:
         return jsonify({'error': 'Name, email, and password required'}), 400
     db = get_db()
-    exists = db.execute("SELECT id FROM customers WHERE email=?", (email,)).fetchone()
+    exists = db.execute("SELECT id FROM customers WHERE email=%s", (email,)).fetchone()
     if exists:
         return jsonify({'error': 'Email already registered'}), 409
     pw_hash = hashlib.sha256(password.encode()).hexdigest()
     cur = db.execute(
-        "INSERT INTO customers (name, email, phone, password_hash) VALUES (?,?,?,?)",
+        "INSERT INTO customers (name, email, phone, password_hash) VALUES (%s,%s,%s,%s) RETURNING id",
         (name, email, phone, pw_hash)
     )
     db.commit()
-    return jsonify({'id': cur.lastrowid, 'name': name, 'email': email}), 201
+    uid = cur.fetchone()['id'] if IS_PG else cur.lastrowid
+    return jsonify({'id': uid, 'name': name, 'email': email}), 201
 
 @app.route('/api/auth/login', methods=['POST'])
 def customer_login():
@@ -268,7 +257,7 @@ def customer_login():
     if not email or not password:
         return jsonify({'error': 'Email and password required'}), 400
     db = get_db()
-    row = db.execute("SELECT * FROM customers WHERE email=?", (email,)).fetchone()
+    row = db.execute("SELECT * FROM customers WHERE email=%s", (email,)).fetchone()
     if not row:
         return jsonify({'error': 'No account found. Please sign up.'}), 401
     if hashlib.sha256(password.encode()).hexdigest() != row['password_hash']:
@@ -326,13 +315,13 @@ def run_seed():
         return False
     for p in SEED_DATA:
         cur = db.execute(
-            "INSERT INTO products (name, category, description, image, badge) VALUES (?,?,?,?,?)",
+            "INSERT INTO products (name, category, description, image, badge) VALUES (%s,%s,%s,%s,%s) RETURNING id",
             (p['name'], p['category'], p.get('description', ''), p['image'], p.get('badge', ''))
         )
-        pid = cur.lastrowid
+        pid = cur.fetchone()['id'] if IS_PG else cur.lastrowid
         for s in p['sizes']:
             db.execute(
-                "INSERT INTO product_sizes (product_id, label, price, original_price) VALUES (?,?,?,?)",
+                "INSERT INTO product_sizes (product_id, label, price, original_price) VALUES (%s,%s,%s,%s)",
                 (pid, s['label'], s['price'], s.get('originalPrice'))
             )
     db.commit()
@@ -354,13 +343,13 @@ def import_products():
     count = 0
     for p in items:
         cur = db.execute(
-            "INSERT INTO products (name, category, image, badge) VALUES (?,?,?,?)",
+            "INSERT INTO products (name, category, image, badge) VALUES (%s,%s,%s,%s) RETURNING id",
             (p['name'], p.get('category', ''), p.get('image', ''), p.get('badge', ''))
         )
-        pid = cur.lastrowid
+        pid = cur.fetchone()['id'] if IS_PG else cur.lastrowid
         for s in p.get('sizes', []):
             db.execute(
-                "INSERT INTO product_sizes (product_id, label, price, original_price) VALUES (?,?,?,?)",
+                "INSERT INTO product_sizes (product_id, label, price, original_price) VALUES (%s,%s,%s,%s)",
                 (pid, s['label'], s['price'], s.get('originalPrice'))
             )
         count += 1
