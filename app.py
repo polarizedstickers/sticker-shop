@@ -1,11 +1,15 @@
-import sqlite3, os, json, hashlib, secrets
+import sqlite3, os, json, hashlib, secrets, uuid
 from decimal import Decimal
 from datetime import datetime
 from functools import wraps
+from werkzeug.utils import secure_filename
 from flask import Flask, g, request, jsonify, send_from_directory
 
 app = Flask(__name__, static_url_path='')
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 DB_PATH = os.path.join(os.path.dirname(__file__), 'store.db')
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), 'uploads')
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 ADMIN_PASSWORD_HASH = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
 
@@ -210,6 +214,30 @@ def admin_login():
     if hashlib.sha256(data.get('password', '').encode()).hexdigest() == ADMIN_PASSWORD_HASH:
         return jsonify({'token': ADMIN_PASSWORD_HASH})
     return jsonify({'error': 'Wrong password'}), 401
+
+# ── Image upload ──────────────────────────────────────────
+
+ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_DIR, filename)
+
+@app.route('/api/upload', methods=['POST'])
+@require_admin
+def upload_image():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file'}), 400
+    f = request.files['file']
+    if not f.filename:
+        return jsonify({'error': 'Empty filename'}), 400
+    ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
+    if ext not in ALLOWED_EXT:
+        return jsonify({'error': 'Invalid type. Allowed: png, jpg, jpeg, gif, webp'}), 400
+    name = str(uuid.uuid4()) + '.' + ext
+    path = os.path.join(UPLOAD_DIR, name)
+    f.save(path)
+    return jsonify({'url': '/uploads/' + name})
 
 # ── Serve frontend ──────────────────────────────────────────
 

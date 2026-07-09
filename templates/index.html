@@ -509,7 +509,7 @@ async function swDash(tab, btn) {
       <h4 style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:1rem">New Product</h4>
       <div class="fg"><label class="fl">Name *</label><input type="text" class="fi" id="apN" placeholder="Product name"></div>
       <div class="fg"><label class="fl">Category</label><select class="fi" id="apC"><option>Automotive</option><option>Cinematic</option><option>Anime</option><option>Wall Setup</option><option>Sticker Pack</option><option>Poster</option><option>Custom</option></select></div>
-      <div class="fg"><label class="fl">Image URL</label><input type="text" class="fi" id="apI" placeholder="https://picsum.photos/seed/.../600/600.jpg"></div>
+      <div class="fg"><label class="fl">Image</label><input type="file" class="fi" id="apI" accept="image/png,image/jpeg,image/gif,image/webp" onchange="previewImg(event)"><img id="apIP" style="width:80px;height:80px;border-radius:8px;object-fit:cover;margin-top:.5rem;display:none"></div>
       <div class="fg"><label class="fl">Badge</label><select class="fi" id="apB"><option value="">None</option><option value="sale">Sale</option><option value="new">New</option><option value="trending">Trending</option></select></div>
       <h5 style="font-family:'Syne',sans-serif;font-weight:600;font-size:.9rem;margin:1rem 0 .75rem">Sizes</h5>
       ${['A4','A3','12x18','13x19'].map(s => `<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem;align-items:center"><span style="font-size:.85rem;font-weight:600">${s}</span><input type="number" class="fi" id="apP_${s}" placeholder="Price" min="0" style="padding:.5rem"><input type="number" class="fi" id="apO_${s}" placeholder="Was" min="0" style="padding:.5rem"></div>`).join('')}
@@ -521,6 +521,13 @@ async function swDash(tab, btn) {
 
 function togAP() { const f = document.getElementById('apF'); f.style.display = f.style.display === 'none' ? 'block' : 'none'; }
 
+function previewImg(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = function(ev) { const img = document.getElementById('apIP'); img.src = ev.target.result; img.style.display = 'block'; };
+  r.readAsDataURL(f);
+}
 async function addProd() {
   const name = document.getElementById('apN').value.trim();
   if (!name) { toast('Enter name'); return; }
@@ -529,15 +536,25 @@ async function addProd() {
     originalPrice: parseInt(document.getElementById('apO_'+s).value) || null
   })).filter(s => s.price > 0);
   if (!sizes.length) { toast('At least one size with price'); return; }
+  const fileInput = document.getElementById('apI');
+  let imageUrl = 'https://picsum.photos/seed/c'+Date.now()+'/600/600.jpg';
+  if (fileInput.files.length) {
+    const fd = new FormData(); fd.append('file', fileInput.files[0]);
+    try {
+      const upRes = await fetch('/api/upload', { method: 'POST', headers: { 'X-Admin-Token': localStorage.getItem('at') }, body: fd });
+      const upData = await upRes.json();
+      if (upData.url) imageUrl = upData.url;
+      else { toast('Upload failed'); return; }
+    } catch(e) { toast('Upload error'); return; }
+  }
   try {
     const res = await api('/api/products', { method: 'POST', body: JSON.stringify({
       name, category: document.getElementById('apC').value,
-      image: document.getElementById('apI').value.trim() || 'https://picsum.photos/seed/c'+Date.now()+'/600/600.jpg',
-      badge: document.getElementById('apB').value, sizes
+      image: imageUrl, badge: document.getElementById('apB').value, sizes
     })});
     if (res.ok) {
       toast('Added!'); document.getElementById('apF').style.display = 'none';
-      ['apN','apI'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('apN').value = ''; fileInput.value = ''; document.getElementById('apIP').style.display = 'none';
       ['A4','A3','12x18','13x19'].forEach(s => { document.getElementById('apP_'+s).value = ''; document.getElementById('apO_'+s).value = ''; });
       await loadProds(); swDash('products', document.querySelectorAll('#dTbs .dtab')[2]);
     }
