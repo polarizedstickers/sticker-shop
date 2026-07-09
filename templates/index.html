@@ -138,7 +138,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
   .sbx{position:relative}.sbx input{padding:.6rem 1rem .6rem 2.5rem;background:var(--ib);border:1px solid var(--border);border-radius:50px;color:var(--fg);font-family:'Space Grotesk',sans-serif;font-size:.85rem;outline:0;transition:border-color .3s,width .3s;width:200px}
   .sbx input:focus{border-color:var(--accent);width:260px}.sbx i{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.8rem}
   footer a{color:var(--muted);text-decoration:none;transition:color .3s}footer a:hover{color:var(--accent)}
-  #auLb.a,#auSb.a{color:var(--fg);border-bottom:2px solid var(--accent)}
+  #auLb.a,#auSb.a,#adAb.a,#adCb.a{color:var(--fg);border-bottom:2px solid var(--accent)}
 </style>
 </head>
 <body>
@@ -225,12 +225,24 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
 <div class="mo" id="adM" style="display:none" onclick="if(event.target===this)clAdm()">
   <div class="mb" style="width:380px">
     <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-      <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem"><i class="fas fa-shield-halved" style="color:var(--accent);margin-right:.5rem"></i>Admin Access</h3>
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem"><i class="fas fa-shield-halved" style="color:var(--accent);margin-right:.5rem"></i>Account Access</h3>
       <button onclick="clAdm()" style="background:0;border:0;color:var(--muted);font-size:1.2rem;padding:.25rem"><i class="fas fa-xmark"></i></button>
     </div>
+    <div style="display:flex;border-bottom:1px solid var(--border)">
+      <button id="adAb" class="a" onclick="swAdmTab('admin')" style="flex:1;padding:.75rem;background:0;border:0;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:.85rem;font-weight:500;transition:all .2s">Admin</button>
+      <button id="adCb" onclick="swAdmTab('customer')" style="flex:1;padding:.75rem;background:0;border:0;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:.85rem;font-weight:500;transition:all .2s">Customer</button>
+    </div>
     <div style="padding:1.5rem">
-      <div class="fg"><label class="fl">Password</label><input type="password" class="fi" id="adPw" placeholder="Enter password" style="padding-right:2.5rem"><div class="fe" id="adPwE"><i class="fas fa-circle-exclamation"></i> Wrong password</div></div>
-      <button class="bp" style="width:100%;justify-content:center" onclick="doAdmLogin()"><i class="fas fa-arrow-right-to-bracket"></i> Enter</button>
+      <div id="adAdmin">
+        <div class="fg"><label class="fl">Admin Password</label><input type="password" class="fi" id="adPw" placeholder="Enter password"><div class="fe" id="adPwE"><i class="fas fa-circle-exclamation"></i> Wrong password</div></div>
+        <button class="bp" style="width:100%;justify-content:center" onclick="doAdmLogin()"><i class="fas fa-arrow-right-to-bracket"></i> Enter</button>
+      </div>
+      <div id="adCustomer" style="display:none">
+        <div class="fg"><label class="fl">Email</label><input type="email" class="fi" id="adCE" placeholder="you@example.com"></div>
+        <div class="fg"><label class="fl">Password</label><input type="password" class="fi" id="adCPw" placeholder="Your password"></div>
+        <div class="fe" id="adCEr"><i class="fas fa-circle-exclamation"></i> <span id="adCErT"></span></div>
+        <button class="bp" style="width:100%;justify-content:center" onclick="doCustAdmLogin()"><i class="fas fa-arrow-right-to-bracket"></i> Login</button>
+      </div>
     </div>
   </div>
 </div>
@@ -510,16 +522,29 @@ function doLogout() { curUser = null; saveUser(); renderUA(); toast('Logged out'
 
 function openAdm() {
   if (adminToken) { openDash(); return; }
+  if (curUser) { openCustOrd(); return; }
   const m = document.getElementById('adM');
+  swAdmTab('admin');
   m.style.display = 'flex';
   m.classList.add('op');
   document.getElementById('adPw').value = '';
   document.getElementById('adPw').classList.remove('er');
   document.getElementById('adPwE').classList.remove('sh');
+  document.getElementById('adCE').value = '';
+  document.getElementById('adCPw').value = '';
+  document.getElementById('adCEr').classList.remove('sh');
 }
 function clAdm() {
   document.getElementById('adM').classList.remove('op');
   document.getElementById('adM').style.display = 'none';
+}
+function swAdmTab(t) {
+  document.getElementById('adAb').className = t === 'admin' ? 'a' : '';
+  document.getElementById('adCb').className = t === 'customer' ? 'a' : '';
+  document.getElementById('adAdmin').style.display = t === 'admin' ? 'block' : 'none';
+  document.getElementById('adCustomer').style.display = t === 'customer' ? 'block' : 'none';
+  document.getElementById('adPwE').classList.remove('sh');
+  document.getElementById('adCEr').classList.remove('sh');
 }
 async function doAdmLogin() {
   const pw = document.getElementById('adPw');
@@ -541,6 +566,26 @@ async function doAdmLogin() {
     pw.classList.add('er');
     document.getElementById('adPwE').classList.add('sh');
   }
+}
+async function doCustAdmLogin() {
+  document.getElementById('adCEr').classList.remove('sh');
+  const e = document.getElementById('adCE').value.trim().toLowerCase();
+  const p = document.getElementById('adCPw').value;
+  if (!e || !p) { toast('Fill all fields'); return; }
+  try {
+    const res = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email: e, password: p }) });
+    if (res.error) {
+      document.getElementById('adCErT').textContent = res.error;
+      document.getElementById('adCEr').classList.add('sh');
+      return;
+    }
+    curUser = res;
+    saveUser();
+    clAdm();
+    renderUA();
+    openCustOrd();
+    toast('Welcome, ' + res.name + '!');
+  } catch(e) { toast('Login failed'); }
 }
 
 // ── Dashboard ─────────────────────────────────────────────────
