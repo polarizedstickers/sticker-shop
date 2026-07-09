@@ -172,7 +172,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
 <!-- NAV -->
 <nav style="position:fixed;top:0;left:0;width:100%;z-index:100;backdrop-filter:blur(14px);background:rgba(10,10,10,.75);border-bottom:1px solid var(--border)">
   <div style="max-width:1300px;margin:0 auto;padding:.85rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem">
-    <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0" id="logoW">
+    <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;cursor:pointer" id="logoW" onclick="logoClick()">
       <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center"><i class="fas fa-fire" style="color:#fff;font-size:.95rem"></i></div>
       <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem">POSTERIZED STICKERS</span>
     </div>
@@ -324,7 +324,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
       </div>
       <div>
         <h4 style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:.75rem">Quick Links</h4>
-        <div style="display:flex;flex-direction:column;gap:.5rem;font-size:.85rem"><a href="#shop">Shop</a><a href="#" onclick="event.preventDefault();openAdm()">Admin</a></div>
+        <div style="display:flex;flex-direction:column;gap:.5rem;font-size:.85rem"><a href="#shop">Shop</a></div>
       </div>
       <div>
         <h4 style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;margin-bottom:.75rem">Contact</h4>
@@ -343,6 +343,13 @@ const API = window.location.origin;
 let prods = [], cart = [], curCat = 'All', sq = '', curUser = null, adminToken = null;
 let payM = 'card', payIdx = 1;
 let selSizes = {};
+let lc = 0, lt;
+function logoClick() {
+  lc++;
+  clearTimeout(lt);
+  lt = setTimeout(() => { lc = 0; }, 800);
+  if (lc >= 5) { lc = 0; openAdm(); }
+}
 
 async function api(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json' };
