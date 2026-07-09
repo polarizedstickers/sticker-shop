@@ -88,7 +88,47 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
 .dtabs{display:flex;gap:.25rem;background:rgba(255,255,255,.03);border-radius:12px;padding:.25rem}
 .dtab{padding:.5rem 1.1rem;border-radius:10px;border:0;background:0;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:.82rem;font-weight:500;transition:all .25s;display:flex;align-items:center;gap:.4rem}
 .dtab:hover{color:var(--fg);background:rgba(255,255,255,.04)}.dtab.a{background:var(--accent);color:#fff;font-weight:600}
-@media(max-width:768px){.cp{width:100vw;max-width:100vw}.dtab span{display:none}}
+@media(max-width:900px){
+  .sbx{width:100%}.sbx input{width:100%}.sbx input:focus{width:100%}
+  nav>div{padding:.7rem 1rem}
+  .qa{opacity:1;transform:none}
+  .pm{flex-direction:column}.pmb{display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem}.pmb i{margin-bottom:0;font-size:1.1rem}
+  #dC .dt{display:block;overflow-x:auto}
+}
+@media(max-width:768px){
+  .cp{width:100vw;max-width:100vw}
+  .dtab span{display:none}
+  header{padding:5rem 1.25rem 3rem;min-height:auto}
+  .ht{font-size:clamp(2.2rem,10vw,4rem)}
+  #pG{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.85rem}
+  .pi{padding:.75rem .85rem 1rem}
+  .pn{font-size:.9rem}
+  .ci{padding:.75rem 1rem;gap:.65rem}.ci img{width:48px;height:48px}
+  .ch{padding:1rem 1rem}
+  .cf{padding:1rem}
+  .mb{padding:0;border-radius:14px}
+  .mb>div{padding:1rem 1.25rem}
+  #dC{padding:0!important}
+  .dn{padding:.75rem 1rem}
+  .cig{grid-template-columns:1fr}
+  .dt td,.dt th{padding:.5rem .6rem;font-size:.75rem}
+  #apF .fg>div{grid-template-columns:1fr!important}
+  footer{padding:2rem 1.25rem}
+  footer>div>div{grid-template-columns:1fr 1fr!important;gap:1.5rem}
+  .tk{font-size:.7rem;padding:.4rem 0}
+  .tst{bottom:1rem;right:1rem;left:1rem;font-size:.82rem}
+}
+@media(max-width:480px){
+  header{padding:4rem 1rem 2.5rem}
+  #pG{grid-template-columns:1fr 1fr;gap:.65rem}
+  .sz-btn{font-size:.65rem;padding:.25rem .4rem}
+  .pnow{font-size:1rem}
+  .pi{padding:.6rem .65rem .85rem}
+  footer>div>div{grid-template-columns:1fr!important;text-align:center}
+  footer>div>div>div>div{justify-content:center}
+  .mo{padding:.5rem}
+  .mb{max-height:95vh}
+}
 </style>
 <style>
   .qc{display:flex;align-items:center;gap:.5rem}
@@ -242,7 +282,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
   <div style="max-width:1300px;margin:0 auto">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2rem;margin-bottom:2rem">
       <div>
-        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem"><div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center"><i class="fas fa-fire" style="color:#fff;font-size:.7rem"></i></div><span style="font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem">POSTERIZED</span></div>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem"><div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center"><i class="fas fa-fire" style="color:#fff;font-size:.7rem"></i></div><span style="font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem">POSTERIZED STICKERS</span></div>
         <p style="color:var(--muted);font-size:.82rem;line-height:1.6">Premium sticker shop.</p>
       </div>
       <div>
