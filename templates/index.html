@@ -193,6 +193,8 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
   <div id="cIt" style="flex:1;overflow-y:auto"></div>
   <div class="cf" id="cFt" style="display:none">
     <div style="display:flex;justify-content:space-between;margin-bottom:.4rem;font-size:.9rem"><span style="color:var(--muted)">Subtotal</span><span id="cSub" style="font-weight:700">Rs.0</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:.4rem;font-size:.9rem"><span style="color:var(--muted)">Shipping</span><span id="cShip" style="font-weight:700">Rs.0</span></div>
+    <div id="cFreeMsg" style="font-size:.72rem;color:var(--sale);margin-bottom:.5rem;display:none"><i class="fas fa-truck"></i> Add Rs.<span id="cFreeRemain">499</span> more for free shipping!</div>
     <div style="display:flex;justify-content:space-between;margin-bottom:1rem;padding-top:.6rem;border-top:1px solid var(--border)"><span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem">Total</span><span id="cTot" style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;color:var(--accent)">Rs.0</span></div>
     <button class="bp" style="width:100%;justify-content:center" onclick="startChk()"><i class="fas fa-lock"></i> Checkout</button>
     <button onclick="clrCart()" style="width:100%;margin-top:.5rem;padding:.55rem;background:0;border:1px solid var(--border);border-radius:50px;color:var(--muted);font-size:.82rem;font-family:'Space Grotesk',sans-serif;transition:all .3s">Clear Cart</button>
@@ -277,7 +279,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
         <div class="fg"><label class="fl">CVV</label><input type="text" class="fi" id="cV" placeholder="***" maxlength="3"></div></div></div>
         <div id="pyU" style="display:none"><div class="fg"><label class="fl">UPI ID</label><input type="text" class="fi" id="uI" placeholder="name@upi"></div></div>
         <div id="pyD" style="display:none"><p style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Pay on delivery</p></div>
-        <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1.25rem"><div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem;font-weight:500">Summary</div><div id="pyS" style="max-height:120px;overflow-y:auto;margin-bottom:.5rem"></div><div style="border-top:1px solid var(--border);padding-top:.5rem;display:flex;justify-content:space-between;font-size:.9rem"><span style="font-weight:600">Total</span><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--accent)" id="pyT">Rs.0</span></div></div>
+        <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1.25rem"><div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem;font-weight:500">Order Summary</div><div id="pyS" style="max-height:120px;overflow-y:auto;margin-bottom:.5rem"></div><div style="border-top:1px solid var(--border);padding-top:.5rem"><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.3rem"><span style="color:var(--muted)">Subtotal</span><span id="pySub">Rs.0</span></div><div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.3rem"><span style="color:var(--muted)">Shipping</span><span id="pyShip">Rs.0</span></div><div style="display:flex;justify-content:space-between;font-size:.9rem;padding-top:.5rem;border-top:1px solid var(--border);margin-top:.5rem"><span style="font-weight:600">Total</span><span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--accent)" id="pyT">Rs.0</span></div></div></div>
         <div style="display:flex;gap:.75rem"><button class="bo bs" onclick="goPS(1)"><i class="fas fa-arrow-left"></i> Back</button><button class="bp" style="flex:1;justify-content:center" onclick="doPay()" id="pyBtn"><i class="fas fa-shield-halved"></i> Place Order</button></div>
       </div>
       <div class="pys" id="ps3">
@@ -459,8 +461,12 @@ function renderCI() {
   f.style.display = 'block';
   c.innerHTML = cart.map((i, idx) => `<div class="ci"><img src="${i.image}" alt="${i.name}" onerror="this.src='https://picsum.photos/seed/fb${i.id}/100/100.jpg'"><div style="flex:1;min-width:0"><div style="font-size:.85rem;font-weight:600;margin-bottom:.3rem">${i.name}</div><div style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem">${i.size ? 'Size: '+i.size : ''}</div><div style="display:flex;align-items:center;justify-content:space-between"><div class="qc"><button class="qn" onclick="uqC(${idx},-1)"><i class="fas fa-minus" style="font-size:.6rem"></i></button><span class="qv">${i.qty}</span><button class="qn" onclick="uqC(${idx},1)"><i class="fas fa-plus" style="font-size:.6rem"></i></button></div><span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)">Rs.${i.price*i.qty}</span></div></div><button onclick="rmC(${idx})" style="background:0;border:0;color:var(--muted);padding:.5rem"><i class="fas fa-xmark"></i></button></div>`).join('');
   const sub = cart.reduce((s, x) => s + x.price * x.qty, 0);
+  const ship = sub >= 499 ? 0 : 49;
   document.getElementById('cSub').textContent = 'Rs.' + sub;
-  document.getElementById('cTot').textContent = 'Rs.' + (sub + (sub >= 499 ? 0 : 49));
+  document.getElementById('cShip').innerHTML = ship ? 'Rs.' + ship : '<span style="color:var(--sale)">FREE</span>';
+  const fm = document.getElementById('cFreeMsg');
+  if (ship && sub < 499) { fm.style.display = 'block'; document.getElementById('cFreeRemain').textContent = 499 - sub; } else { fm.style.display = 'none'; }
+  document.getElementById('cTot').textContent = 'Rs.' + (sub + ship);
 }
 
 // ── Auth ──────────────────────────────────────────────────────
@@ -733,7 +739,9 @@ function renderPaySummary() {
   const sub = cart.reduce((s, x) => s + x.price * x.qty, 0), sh = sub >= 499 ? 0 : 49;
   document.getElementById('pyS').innerHTML = cart.map(i =>
     '<div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.3rem 0"><span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%">'+i.name+(i.size ? ' ('+i.size+')' : '')+' x'+i.qty+'</span><span>Rs.'+(i.price*i.qty)+'</span></div>'
-  ).join('') + '<div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.3rem 0;color:var(--muted)"><span>Shipping</span><span>'+(sh===0?'FREE':'Rs.'+sh)+'</span></div>';
+  ).join('');
+  document.getElementById('pySub').textContent = 'Rs.'+sub;
+  document.getElementById('pyShip').innerHTML = sh ? 'Rs.'+sh : '<span style="color:var(--sale)">FREE</span>';
   document.getElementById('pyT').textContent = 'Rs.'+(sub+sh);
 }
 function selPM(m, btn) {
