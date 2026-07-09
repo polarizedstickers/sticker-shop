@@ -581,7 +581,7 @@ async function addProd() {
   if (fileInput.files.length) {
     const fd = new FormData(); fd.append('file', fileInput.files[0]);
     try {
-      const upRes = await fetch('/api/upload', { method: 'POST', headers: { 'X-Admin-Token': localStorage.getItem('at') }, body: fd });
+      const upRes = await fetch('/api/upload', { method: 'POST', headers: { 'X-Admin-Token': adminToken }, body: fd });
       const upData = await upRes.json();
       if (upData.url) imageUrl = upData.url;
       else { toast('Upload failed'); return; }
