@@ -278,7 +278,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
         <div class="fg"><label class="fl">City *</label><input type="text" class="fi" id="shC" placeholder="City" oninput="clSE(this)"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
           <div class="fg"><label class="fl">PIN *</label><input type="text" class="fi" id="shPi" placeholder="600001" maxlength="6" oninput="clSE(this)"></div>
-          <div class="fg"><label class="fl">State *</label><select class="fi" id="shSt" onchange="clSE(this)"><option value="">Select</option><option>Tamil Nadu</option><option>Karnataka</option><option>Maharashtra</option><option>Delhi</option><option>Kerala</option><option>Other</option></select></div>
+          <div class="fg"><label class="fl">State *</label><select class="fi" id="shSt" onchange="clSE(this)"><option value="">Select</option><option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chandigarh</option><option>Chhattisgarh</option><option>Dadra & Nagar Haveli</option><option>Daman & Diu</option><option>Delhi</option><option>Goa</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jammu & Kashmir</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Ladakh</option><option>Lakshadweep</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Puducherry</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option></select></div>
         </div>
         <button class="bp" style="width:100%;justify-content:center;margin-top:.5rem" onclick="valShip()">Continue <i class="fas fa-arrow-right"></i></button>
       </div>
@@ -754,17 +754,22 @@ function valShip() {
   const labels = ['Name','Phone','Email','Address','City','PIN','State'];
   fields.forEach(id => document.getElementById(id).classList.remove('er'));
   document.getElementById('sEB').classList.remove('sh');
-  const errs = [];
-  if (!document.getElementById('shN').value.trim()) errs.push(0);
-  if (document.getElementById('shPh').value.replace(/\D/g,'').length < 10) errs.push(1);
-  if (!document.getElementById('shE').value.trim()) errs.push(2);
-  if (!document.getElementById('shA').value.trim()) errs.push(3);
-  if (!document.getElementById('shC').value.trim()) errs.push(4);
-  if (!/^\d{6}$/.test(document.getElementById('shPi').value.trim())) errs.push(5);
-  if (!document.getElementById('shSt').value) errs.push(6);
+  const errs = [], msgs = [];
+  const n = document.getElementById('shN').value.trim();
+  if (!n || n.length < 3) { errs.push(0); msgs.push('Name (min 3 chars)'); }
+  const ph = document.getElementById('shPh').value.replace(/\D/g,'');
+  if (ph.length < 10) { errs.push(1); msgs.push('Phone (10 digits)'); }
+  const em = document.getElementById('shE').value.trim();
+  if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { errs.push(2); msgs.push('Valid email'); }
+  const ad = document.getElementById('shA').value.trim();
+  if (!ad || ad.length < 5) { errs.push(3); msgs.push('Address (min 5 chars)'); }
+  if (!document.getElementById('shC').value.trim()) { errs.push(4); msgs.push('City'); }
+  const pi = document.getElementById('shPi').value.trim();
+  if (!/^\d{6}$/.test(pi)) { errs.push(5); msgs.push('Valid 6-digit PIN'); }
+  if (!document.getElementById('shSt').value) { errs.push(6); msgs.push('State'); }
   if (errs.length) {
     errs.forEach(i => { document.getElementById(fields[i]).classList.add('er'); });
-    document.getElementById('sET').textContent = 'Please fill: ' + errs.map(i => labels[i]).join(', ');
+    document.getElementById('sET').textContent = 'Check: ' + msgs.join(', ');
     document.getElementById('sEB').classList.add('sh');
     return;
   }
