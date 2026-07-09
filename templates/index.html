@@ -45,6 +45,7 @@ body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg)
 .ch{padding:1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .ci{display:flex;gap:1rem;padding:1rem 1.5rem;border-bottom:1px solid var(--border)}.ci img{width:64px;height:64px;border-radius:8px;object-fit:cover}
 .cf{margin-top:auto;padding:1.5rem;border-top:1px solid var(--border);background:rgba(255,255,255,.02)}
+.ud.op{display:block!important}
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem}.mo.op{opacity:1;pointer-events:all}
 .mb{background:#111;border:1px solid var(--border);border-radius:18px;width:520px;max-width:100%;max-height:90vh;overflow-y:auto;transform:scale(.92);transition:transform .35s}.mo.op .mb{transform:scale(1)}
 .fi{width:100%;padding:.75rem 1rem;background:var(--ib);border:1px solid var(--border);border-radius:10px;color:var(--fg);font-family:'Space Grotesk',sans-serif;font-size:.9rem;outline:0;transition:border-color .3s}
@@ -503,7 +504,7 @@ function renderUA() {
   const a = document.getElementById('uA');
   if (curUser) {
     const i = curUser.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    a.innerHTML = `<div style="position:relative"><button onclick="document.getElementById('udD').classList.toggle('op')" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;color:#fff;border:2px solid transparent;transition:border-color .3s">${i}</button><div id="udD" style="display:none;position:absolute;top:calc(100% + .5rem);right:0;width:200px;background:#111;border:1px solid var(--border);border-radius:14px;padding:.5rem;z-index:50"><div style="padding:.75rem;border-bottom:1px solid var(--border)"><div style="font-weight:600;font-size:.9rem">${curUser.name}</div><div style="font-size:.78rem;color:var(--muted)">${curUser.email}</div></div><button onclick="openCustOrd();document.getElementById('udD').classList.remove('op')" style="display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem;width:100%;border:0;background:0;color:var(--muted);font-size:.85rem;font-family:'Space Grotesk',sans-serif;text-align:left;border-radius:8px"><i class="fas fa-box"></i> My Orders</button><button onclick="doLogout();document.getElementById('udD').classList.remove('op')" style="display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem;width:100%;border:0;background:0;color:var(--muted);font-size:.85rem;font-family:'Space Grotesk',sans-serif;text-align:left;border-radius:8px"><i class="fas fa-right-from-bracket"></i> Logout</button></div></div>`;
+    a.innerHTML = `<div style="position:relative"><button onclick="document.getElementById('udD').classList.toggle('op')" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;color:#fff;border:2px solid transparent;transition:border-color .3s">${i}</button><div id="udD" class="ud" style="display:none;position:absolute;top:calc(100% + .5rem);right:0;width:200px;background:#111;border:1px solid var(--border);border-radius:14px;padding:.5rem;z-index:50"><div style="padding:.75rem;border-bottom:1px solid var(--border)"><div style="font-weight:600;font-size:.9rem">${curUser.name}</div><div style="font-size:.78rem;color:var(--muted)">${curUser.email}</div></div><button onclick="openCustOrd();document.getElementById('udD').classList.remove('op')" style="display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem;width:100%;border:0;background:0;color:var(--muted);font-size:.85rem;font-family:'Space Grotesk',sans-serif;text-align:left;border-radius:8px"><i class="fas fa-box"></i> My Orders</button><button onclick="doLogout();document.getElementById('udD').classList.remove('op')" style="display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem;width:100%;border:0;background:0;color:var(--muted);font-size:.85rem;font-family:'Space Grotesk',sans-serif;text-align:left;border-radius:8px"><i class="fas fa-right-from-bracket"></i> Logout</button></div></div>`;
   } else {
     a.innerHTML = `<button onclick="openAu()" style="display:inline-flex;align-items:center;gap:.6rem;padding:.55rem 1.2rem;background:0;color:var(--fg);font-family:'Syne',sans-serif;font-weight:600;font-size:.82rem;border:1.5px solid var(--border);border-radius:50px;transition:all .3s"><i class="fas fa-user"></i> Login</button>`;
   }
@@ -803,6 +804,9 @@ async function doPay() {
 async function openCustOrd() {
   if (!curUser) { openAu(); toast('Please login'); return; }
   const c = document.getElementById('orC');
+  c.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;margin-bottom:.75rem;display:block"></i>Loading orders...</div>';
+  document.getElementById('orM').classList.add('op');
+  document.body.style.overflow = 'hidden';
   try {
     const orders = await api('/api/orders?email=' + encodeURIComponent(curUser.email));
     if (!orders.length) { c.innerHTML = '<div class="es"><i class="fas fa-box-open"></i><p>No orders yet</p></div>'; }
@@ -813,9 +817,7 @@ async function openCustOrd() {
         return '<div style="border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem"><div><div style="font-weight:700;font-size:.9rem">'+o.id+'</div><div style="font-size:.78rem;color:var(--muted)">'+d+'</div></div><div style="display:flex;align-items:center;gap:.75rem"><span class="os '+(sc[o.status]||'os-c')+'">'+o.status+'</span><span style="font-family:\'Syne\',sans-serif;font-weight:700;color:var(--accent)">Rs.'+o.total+'</span></div></div><div style="margin-top:.6rem;font-size:.8rem;color:var(--muted)">'+(o.items||[]).map(i => i.product_name+(i.size ? ' ('+i.size+')' : '')+' x'+i.quantity).join(' · ')+'</div></div>';
       }).join('');
     }
-    document.getElementById('orM').classList.add('op');
-    document.body.style.overflow = 'hidden';
-  } catch(e) { c.innerHTML = '<div class="es"><p>Failed to load</p></div>'; }
+  } catch(e) { c.innerHTML = '<div class="es"><p>Failed to load. Please try again.</p></div>'; }
 }
 
 // ── Search ────────────────────────────────────────────────────
