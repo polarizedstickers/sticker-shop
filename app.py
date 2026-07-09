@@ -298,25 +298,24 @@ def index():
 
 # ── Seed ────────────────────────────────────────────────────
 
-@app.route('/api/seed', methods=['POST'])
-@require_admin
-def seed():
+SEED_DATA = [
+    {'name': '22pc Automotive Wall Combo', 'category': 'Wall Setup', 'description': 'Complete car-themed wall transformation. 22 premium glossy prints.', 'image': 'https://picsum.photos/seed/auto1/600/600', 'badge': 'sale', 'sizes': [{'label': 'A4', 'price': 499, 'originalPrice': 999}, {'label': 'A3', 'price': 699, 'originalPrice': 1299}, {'label': '12x18', 'price': 899, 'originalPrice': 1599}]},
+    {'name': 'Ultimate Fan Wall Setup — 24 A4 Pack', 'category': 'Wall Setup', 'description': '24-piece cinematic wall combo. A4 museum-quality prints.', 'image': 'https://picsum.photos/seed/cinema1/600/600', 'badge': 'sale', 'sizes': [{'label': 'A4', 'price': 549, 'originalPrice': 1099}, {'label': 'A3', 'price': 749, 'originalPrice': 1499}, {'label': '12x18', 'price': 949, 'originalPrice': 1799}]},
+    {'name': 'JDM Legends Sticker Pack — 50 Pcs', 'category': 'Sticker Pack', 'description': '50 waterproof vinyl JDM car stickers. Die-cut premium.', 'image': 'https://picsum.photos/seed/jdm1/600/600', 'badge': 'trending', 'sizes': [{'label': 'A4', 'price': 199, 'originalPrice': 399}, {'label': 'A3', 'price': 299, 'originalPrice': 599}, {'label': '12x18', 'price': 399, 'originalPrice': 799}]},
+    {'name': 'Minimal Car Blueprint Poster Set', 'category': 'Poster', 'description': '3 detailed blueprint posters. A3, 200gsm matte.', 'image': 'https://picsum.photos/seed/blueprint1/600/600', 'badge': 'sale', 'sizes': [{'label': 'A4', 'price': 349, 'originalPrice': 699}, {'label': 'A3', 'price': 499, 'originalPrice': 999}, {'label': '12x18', 'price': 649, 'originalPrice': 1299}]},
+    {'name': 'Anime Action Sticker Combo — 40 Pcs', 'category': 'Anime', 'description': '40 premium anime stickers. Waterproof, UV-resistant.', 'image': 'https://picsum.photos/seed/anime1/600/600', 'badge': 'new', 'sizes': [{'label': 'A4', 'price': 179, 'originalPrice': 349}, {'label': 'A3', 'price': 279, 'originalPrice': 549}, {'label': '12x18', 'price': 379, 'originalPrice': 749}]},
+    {'name': 'Supercar Sticker Bomb — 60 Pcs', 'category': 'Sticker Pack', 'description': '60 supercar stickers. Premium waterproof vinyl.', 'image': 'https://picsum.photos/seed/supercar1/600/600', 'badge': 'pack', 'sizes': [{'label': 'A4', 'price': 249, 'originalPrice': 499}, {'label': 'A3', 'price': 349, 'originalPrice': 699}, {'label': '12x18', 'price': 449, 'originalPrice': 899}]},
+    {'name': 'Vintage Racing Poster Set', 'category': 'Automotive', 'description': '4 vintage racing posters. Le Mans & F1 era. A3.', 'image': 'https://picsum.photos/seed/vintage1/600/600', 'badge': 'sale', 'sizes': [{'label': 'A4', 'price': 379, 'originalPrice': 749}, {'label': 'A3', 'price': 529, 'originalPrice': 1049}, {'label': '12x18', 'price': 679, 'originalPrice': 1349}]},
+    {'name': 'Dark Cinematic Poster Collection', 'category': 'Cinematic', 'description': '5 dark movie posters. A2 deep black matte.', 'image': 'https://picsum.photos/seed/dark1/600/600', 'badge': 'sale', 'sizes': [{'label': 'A4', 'price': 399, 'originalPrice': 799}, {'label': 'A3', 'price': 599, 'originalPrice': 1199}, {'label': '12x18', 'price': 799, 'originalPrice': 1599}]},
+    {'name': 'Automotive Wall Collage Kit — 15 Pcs', 'category': 'Wall Setup', 'description': '15 mixed-size auto posters. A5 to A3 gallery wall.', 'image': 'https://picsum.photos/seed/collage1/600/600', 'badge': 'trending', 'sizes': [{'label': 'A4', 'price': 449, 'originalPrice': 899}, {'label': 'A3', 'price': 649, 'originalPrice': 1299}, {'label': '12x18', 'price': 849, 'originalPrice': 1699}]},
+]
+
+def run_seed():
     db = get_db()
     existing = db.execute("SELECT COUNT(*) as c FROM products").fetchone()['c']
     if existing > 0:
-        return jsonify({'message': f'{existing} products exist'})
-    seed_data = [
-        {'name': '22pc Automotive Wall Combo', 'category': 'Wall Setup', 'description': 'Complete car-themed wall transformation. 22 premium glossy prints.', 'image': 'https://picsum.photos/seed/auto1/600/600', 'badge': 'sale', 'sizes': [{'label': 'A4', 'price': 499, 'originalPrice': 999}, {'label': 'A3', 'price': 699, 'originalPrice': 1299}, {'label': '12x18', 'price': 899, 'originalPrice': 1599}]},
-        {'name': 'Ultimate Fan Wall Setup — 24 A4 Pack', 'category': 'Wall Setup', 'description': '24-piece cinematic wall combo. A4 museum-quality prints.', 'image': 'https://picsum.photos/seed/cinema1/600/600', 'badge': 'sale', 'sizes': [{'label': 'A4', 'price': 549, 'originalPrice': 1099}, {'label': 'A3', 'price': 749, 'originalPrice': 1499}, {'label': '12x18', 'price': 949, 'originalPrice': 1799}]},
-        {'name': 'JDM Legends Sticker Pack — 50 Pcs', 'category': 'Sticker Pack', 'description': '50 waterproof vinyl JDM car stickers. Die-cut premium.', 'image': 'https://picsum.photos/seed/jdm1/600/600', 'badge': 'trending', 'sizes': [{'label': 'A4', 'price': 199, 'originalPrice': 399}, {'label': 'A3', 'price': 299, 'originalPrice': 599}, {'label': '12x18', 'price': 399, 'originalPrice': 799}]},
-        {'name': 'Minimal Car Blueprint Poster Set', 'category': 'Poster', 'description': '3 detailed blueprint posters. A3, 200gsm matte.', 'image': 'https://picsum.photos/seed/blueprint1/600/600', 'badge': 'sale', 'sizes': [{'label': 'A4', 'price': 349, 'originalPrice': 699}, {'label': 'A3', 'price': 499, 'originalPrice': 999}, {'label': '12x18', 'price': 649, 'originalPrice': 1299}]},
-        {'name': 'Anime Action Sticker Combo — 40 Pcs', 'category': 'Anime', 'description': '40 premium anime stickers. Waterproof, UV-resistant.', 'image': 'https://picsum.photos/seed/anime1/600/600', 'badge': 'new', 'sizes': [{'label': 'A4', 'price': 179, 'originalPrice': 349}, {'label': 'A3', 'price': 279, 'originalPrice': 549}, {'label': '12x18', 'price': 379, 'originalPrice': 749}]},
-        {'name': 'Supercar Sticker Bomb — 60 Pcs', 'category': 'Sticker Pack', 'description': '60 supercar stickers. Premium waterproof vinyl.', 'image': 'https://picsum.photos/seed/supercar1/600/600', 'badge': 'pack', 'sizes': [{'label': 'A4', 'price': 249, 'originalPrice': 499}, {'label': 'A3', 'price': 349, 'originalPrice': 699}, {'label': '12x18', 'price': 449, 'originalPrice': 899}]},
-        {'name': 'Vintage Racing Poster Set', 'category': 'Automotive', 'description': '4 vintage racing posters. Le Mans & F1 era. A3.', 'image': 'https://picsum.photos/seed/vintage1/600/600', 'badge': 'sale', 'sizes': [{'label': 'A4', 'price': 379, 'originalPrice': 749}, {'label': 'A3', 'price': 529, 'originalPrice': 1049}, {'label': '12x18', 'price': 679, 'originalPrice': 1349}]},
-        {'name': 'Dark Cinematic Poster Collection', 'category': 'Cinematic', 'description': '5 dark movie posters. A2 deep black matte.', 'image': 'https://picsum.photos/seed/dark1/600/600', 'badge': 'sale', 'sizes': [{'label': 'A4', 'price': 399, 'originalPrice': 799}, {'label': 'A3', 'price': 599, 'originalPrice': 1199}, {'label': '12x18', 'price': 799, 'originalPrice': 1599}]},
-        {'name': 'Automotive Wall Collage Kit — 15 Pcs', 'category': 'Wall Setup', 'description': '15 mixed-size auto posters. A5 to A3 gallery wall.', 'image': 'https://picsum.photos/seed/collage1/600/600', 'badge': 'trending', 'sizes': [{'label': 'A4', 'price': 449, 'originalPrice': 899}, {'label': 'A3', 'price': 649, 'originalPrice': 1299}, {'label': '12x18', 'price': 849, 'originalPrice': 1699}]},
-    ]
-    for p in seed_data:
+        return False
+    for p in SEED_DATA:
         cur = db.execute(
             "INSERT INTO products (name, category, description, image, badge) VALUES (?,?,?,?,?)",
             (p['name'], p['category'], p.get('description', ''), p['image'], p.get('badge', ''))
@@ -328,10 +327,17 @@ def seed():
                 (pid, s['label'], s['price'], s.get('originalPrice'))
             )
     db.commit()
-    return jsonify({'ok': True, 'count': len(seed_data)})
+    return True
+
+@app.route('/api/seed', methods=['POST'])
+@require_admin
+def seed():
+    return jsonify({'ok': True, 'count': len(SEED_DATA), 'seeded': run_seed()})
 
 with app.app_context():
     init_db()
+    if run_seed():
+        print("[auto-seed] Default products seeded")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
